@@ -1,89 +1,89 @@
 #!/bin/bash
 
 # 获取当前脚本的绝对路径
-SCRIPT_PATH=$(realpath "$0")
+脚本路径=$(真实路径"$0")
 
 # 保存流量数据的文件
-TRAFFIC_FILE="/var/tmp/network_traffic.dat"
-CURRENT_MONTH=$(date +"%Y-%m")
-SHUTDOWN_THRESHOLD=$((15 * 1024 * 1024 * 1024 + 512 * 1024 * 1024))  # 9.5GB 转换为字节的整数表示
+交通文件="/var/tmp/network_traffic.dat "
+当前月份=$(日期+" %Y-%m ")
+关闭阈值=$((18 * 1024 * 1024 * 1024 + 512 * 1024 * 1024))  # 18.5GB转换为字节的整数表示
 
-# 自动检测活跃的网络接口（排除 lo 环回接口）
-INTERFACES=$(ls /sys/class/net | grep -v lo)
+# 自动检测活跃的网络接口（排除瞧环回接口)
+接口=$(ls /sys/class/net | grep -v lo)
 
-# 如果流量文件不存在或者月份不同，则创建并初始化
-if [ ! -f $TRAFFIC_FILE ]; then
-    echo "$CURRENT_MONTH 0 0" > $TRAFFIC_FILE
-else
-    saved_month=$(awk '{print $1}' $TRAFFIC_FILE)
-    if [ "$saved_month" != "$CURRENT_MONTH" ]; then
-        echo "$CURRENT_MONTH 0 0" > $TRAFFIC_FILE
-    fi
-fi
+# 如果流量文件不存在或者月份不同,则创建并初始化
+如果 [ ! -f $TRAFFIC_FILE ]; 然后
+回声"$当前_月 0 0" > $TRAFFIC_FILE
+其他
+    已保存_月=$(awk{打印$1} ' $TRAFFIC_FILE)
+    如果 [ "saved _ month" != "$当前_月" ]; 然后
+回声"$当前_月 0 0" > $TRAFFIC_FILE
+    船方不负担装货费用
+船方不负担装货费用
 
 # 读取之前的接收和发送累计流量
-read saved_month last_total_in last_total_out < $TRAFFIC_FILE
+读取保存月份最后总计输入最后总计输出<$TRAFFIC_FILE
 
 # 初始化本次启动后的累计流量
-current_total_in=0
-current_total_out=0
+当前总数=0
+当前合计输出=0
 
-# 遍历每个接口，获取并输出流量信息
-for INTERFACE in $INTERFACES; do
+# 遍历每个接口,获取并输出流量信息
+为连接在 $接口; 做
     # 获取当前接收和发送的字节数
-    in_bytes=$(cat /proc/net/dev | grep $INTERFACE | awk '{print $2}')
-    out_bytes=$(cat /proc/net/dev | grep $INTERFACE | awk '{print $10}')
+    以字节计=$(cat /proc/net/dev | grep$接口| awk{打印$2} ')
+    输出字节数=$(cat /proc/net/dev | grep$接口| awk{打印$10} ')
 
     # 本次启动后的累计流量
-    current_total_in=$((current_total_in + in_bytes))
-    current_total_out=$((current_total_out + out_bytes))
-done
+    当前总数=$((当前总输入+输入字节))
+    当前合计输出=$((当前总输出+输出字节))
+完成的
 
 # 计算启动前后的累计流量
-total_in=$((last_total_in + current_total_in))
-total_out=$((last_total_out + current_total_out))
-total_bytes=$((total_in + total_out))
+总计_输入= $((last _ total _ in+current _ total _ in))
+总计_输出= $((last _ total _ out+current _ total _ out))
+总计_字节=$((total_in + total_out))
 
-# 检查是否达到9.5GB的阈值
-if [ "$total_bytes" -ge "$SHUTDOWN_THRESHOLD" ]; then
-    echo "总流量已达到 9.5GB，系统即将关机..."
-    sudo shutdown -h now
-fi
+# 检查是否达到18.5GB的阈值
+如果 [ "$total_bytes" -葛 "$ SHUTDOWN _阈值" ]; 然后
+回声"总流量已达到18.5GB，系统即将关机..."
+sudo关闭-h现在
+船方不负担装货费用
 
 # 自适应单位输出
-if [ $total_bytes -lt 1024 ]; then
-    total="$total_bytes bytes"
-elif [ $total_bytes -lt $((1024 * 1024)) ]; then
-    total=$(echo "scale=2; $total_bytes / 1024" | bc)
-    total="$total KB"
-elif [ $total_bytes -lt $((1024 * 1024 * 1024)) ]; then
-    total=$(echo "scale=2; $total_bytes / 1024 / 1024" | bc)
-    total="$total MB"
-else
-    total=$(echo "scale=2; $total_bytes / 1024 / 1024 / 1024" | bc)
-    total="$total GB"
-fi
+如果 [ $total_bytes -中尉 1024 ]; 然后
+    总数="$total_bytes字节数"
+ 否则如果 [ $total_bytes -中尉 $((1024 * 1024)) ]; 然后
+    总数=$(echo“scale = 2；$total_bytes / 1024"|公元前)
+    总数="总计美元KB "
+ 否则如果 [ $total_bytes -中尉 $((1024 * 1024 * 1024)) ]; 然后
+    总数=$(echo“scale = 2；$total_bytes / 1024 / 1024"|公元前)
+    总数="总计美元MB "
+其他
+    总数=$(echo“scale = 2；$total_bytes / 1024 / 1024 / 1024"|公元前)
+    总数="总计美元GB "
+船方不负担装货费用
 
 # 输出结果
-echo "In+Out Total This Month: $total"
-echo "------------------------------"
+回声“本月进+出合计:总计美元"
+回声"------------------------------"
 
 # 将累计的流量数据保存到文件
-echo "$CURRENT_MONTH $total_in $total_out" > $TRAFFIC_FILE
+回声"$当前_月 总收入 $total_out" > $TRAFFIC_FILE
 
-# 检查是否已经存在cron任务
-CRON_CMD="*/5 * * * * $SCRIPT_PATH"
-(crontab -l | grep -F "$CRON_CMD") || {
-    # 尝试添加cron任务，并捕获错误
-    (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab - 2>/tmp/cron_error.log
+# 检查是否已经存在时间单位任务
+克隆指令="*/1 * * * * $SCRIPT_PATH"
+(crontab-我grep-F "$克朗_命令") || {
+    # 尝试添加时间单位任务,并捕获错误
+(crontab-我 2>/dev/null；回声"$克朗_命令")| crontab- 2>/tmp/cron_error.log
 
     # 检查是否出现了权限错误
-    if grep -q "you are not allowed to use this program" /tmp/cron_error.log; then
-        echo "无法添加定时任务：没有权限。请以root用户或管理员权限运行此脚本。" >&2
-    elif grep -q "permission denied" /tmp/cron_error.log; then
-        echo "无法添加定时任务：权限被拒绝。请以root用户或管理员权限运行此脚本。" >&2
-    fi
+    如果可做文件内的字符串查找问 "不允许您使用此程序"/tmp/cron _ error . log；然后
+回声"无法添加定时任务：没有权限。请以根用户或管理员权限运行此脚本。" >&2
+     否则如果可做文件内的字符串查找问 "权限被拒绝"/tmp/cron _ error . log；然后
+回声"无法添加定时任务：权限被拒绝。请以根用户或管理员权限运行此脚本。" >&2
+    船方不负担装货费用
 
     # 删除错误日志
-    rm -f /tmp/cron_error.log
+空间-f/tmp/cron_error.log
 }
